@@ -9,7 +9,7 @@ st.set_page_config(
 st.title("🥗 Food & Calorie Tracker")
 st.write("Catat makanan dan pantau kalori harianmu dengan mudah di sini.")
 
-# Form Input Sederhana
+# Form Input dengan Upload Foto
 with st.form("form_kalori", clear_on_submit=True):
   st.subheader("➕ Tambah Catatan Makanan")
   tanggal = st.date_input("Tanggal", value=datetime.now())
@@ -17,20 +17,27 @@ with st.form("form_kalori", clear_on_submit=True):
   jumlah_kalori = st.number_input(
       "Jumlah Kalori (kcal)", min_value=0, step=10, value=100
   )
-  link_foto = st.text_input("Link Foto Makanan (Opsional)")
+
+  # Fitur Upload Foto Langsung
+  uploaded_file = st.file_uploader(
+      "Upload Foto Makanan (Format: JPG, PNG)", type=["jpg", "jpeg", "png"]
+  )
 
   submit_button = st.form_submit_button(label="Simpan Data")
 
   if submit_button:
     if nama_makanan.strip() != "":
+      # Jika ada foto yang di-upload, kita ambil namanya (atau nanti bisa disimpan)
+      nama_foto = uploaded_file.name if uploaded_file is not None else "-"
+
       st.success(
-          f"Berhasil dicatat: {nama_makanan} ({jumlah_kalori} kcal) pada"
-          f" {tanggal}!"
+          f"Berhasil dicatat: {nama_makanan} ({jumlah_kalori} kcal) dengan"
+          f" foto: {nama_foto}!"
       )
     else:
       st.warning("Nama makanan tidak boleh kosong!")
 
-# Membaca Data dari Google Sheets Publik (Tanpa Secrets)
+# Membaca Data dari Google Sheets Publik
 SHEET_ID = "1UW-qYpzKF8U0z1AmqGjlgqXf8O1Ppk7xwx5CHIpAeB4"
 SHEET_NAME = "kalori"
 url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
