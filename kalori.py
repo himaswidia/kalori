@@ -7,23 +7,24 @@ st.set_page_config(
 
 st.title("🥗 Food & Calorie Tracker")
 st.write(
-    "Catat makanan harianmu melalui Google Form di bawah ini. Data dan foto"
-    " akan otomatis tersimpan ke Google Drive & Sheets!"
+    "Catat makanan harianmu dengan mudah melalui Google Form resmi di bawah"
+    " ini!"
 )
 
-# --- 1. EMBED GOOGLE FORM (100% Aman & Resmi) ---
-GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc1XenVBhorc_SSVog7dnJl-jV0R2vztFMuzutG3PmaoePAlg/viewform?usp=embed_hide"
+# --- 1. TOMBOL LINK MENUJU GOOGLE FORM (100% Aman & Tanpa Blokir) ---
+GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc1XenVBhorc_SSVog7dnJl-jV0R2vztFMuzutG3PmaoePAlg/viewform"
 
-st.markdown("### 📝 Form Input Makanan")
-# Menggunakan parameter embedded agar form tampil rapi di dalam halaman Streamlit
-st.components.v1.iframe(GOOGLE_FORM_URL, height=650, scrolling=True)
+st.markdown("### 📝 Input Data Makanan Baru")
+st.markdown(
+    "Klik tombol di bawah untuk membuka form pencatatan makanan dan upload"
+    " foto:"
+)
+st.link_button("👉 Buka Google Form Catat Kalori", GOOGLE_FORM_URL)
 
 st.markdown("---")
 
 # --- 2. MENAMPILKAN RIWAYAT & TOTAL KALORI DARI GOOGLE SHEETS ---
-SHEET_ID = (  # ID Google Sheets kamu
-    "1UW-qYpzKF8U0z1AmqGjlgqXf8O1Ppk7xwx5CHIpAeB4"
-)
+SHEET_ID = "1UW-qYpzKF8U0z1AmqGjlgqXf8O1Ppk7xwx5CHIpAeB4"
 SHEET_NAME = "Form_Responses_1"
 url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
 
