@@ -1,3 +1,4 @@
+from datetime import datetime
 import pandas as pd
 import streamlit as st
 
@@ -6,24 +7,17 @@ st.set_page_config(
 )
 
 st.title("🥗 Food & Calorie Tracker")
-st.write(
-    "Catat makanan harianmu dengan mudah melalui Google Form resmi di bawah"
-    " infokan!"
-)
+st.write("Catat makanan harianmu dan pantau rekap kalori per hari!")
 
 # Tombol Google Form
 GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc1XenVBhorc_SSVog7dnJl-jV0R2vztFMuzutG3PmaoePAlg/viewform"
 
 st.markdown("### 📝 Input Data Makanan Baru")
-st.markdown(
-    "Klik tombol di bawah untuk membuka form pencatatan makanan dan upload"
-    " foto:"
-)
 st.link_button("👉 Buka Google Form Catat Kalori", GOOGLE_FORM_URL)
 
 st.markdown("---")
 
-# --- MEMBACA RIWAYAT DARI GOOGLE SHEETS YANG BENAR ---
+# --- MEMBACA RIWAYAT DARI GOOGLE SHEETS ---
 SHEET_ID = "1uvO_4PJnCkCOUJEl4DpPnabBW6AtjBEnho2ypiRH-GE"
 url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv"
 
@@ -39,23 +33,64 @@ def load_data():
 
 df = load_data()
 
-st.subheader("📜 Riwayat Makanan & Total Kalori")
+st.subheader("📊 Rekap & Riwayat Kalori")
 
 if df is not None and not df.empty:
   # Membersihkan spasi pada nama kolom
   df.columns = df.columns.str.strip()
 
-  # Mencari kolom yang mengandung kata 'kalori' secara otomatis
+  # Mencari nama kolom yang relevan secara otomatis
   kolom_kalori = [col for col in df.columns if "kalori" in col.lower()]
+  kolom_tanggal = [
+      col for col in df.columns if "tanggal" in col.lower() or "date" in col.lower()
+  ]
+
   if kolom_kalori:
-    col_nama = kolom_kalori[0]
-    df[col_nama] = pd.to_numeric(df[col_nama], errors="coerce").fillna(0)
-    total_kalori = int(df[col_nama].sum())
+    col_kalori_nama = kolom_kalori[0]
+    df[col_kalori_nama] = pd.to_numeric(
+        df[col_kalori_nama], errors="coerce"
+    ).fillna(0)
+
+    # 1. Total Kalori Keseluruhan
+    total_semua = int(df[col_kalori_nama].sum())
     st.metric(
-        label="🔥 Total Kalori Masuk Keseluruhan", value=f"{total_kalori} kcal"
+        label="🔥 Total Kalori Keseluruhan", value=f"{total_semua} kcal"
     )
 
-  st.dataframe(df, use_container_width=True)
+    # 2. Rekap Berdasarkan Tanggal (Per Hari)
+    if kolom_tanggal:
+      col_tgl_nama = kolom_tanggal[0]
+      # Ambil tanggal saja (mengabaikan jam jika ada di timestamp)
+      df["Tanggal_Saja"] = (
+          df[col_tgl_nama].astype(str).str.split(" ").str[0]
+      )
+
+      st.markdown("---")
+      st.subheader("📅 Pilih Tanggal untuk Lihat Rekap Harian")
+
+      # Membuat pilihan tanggal unik dari data yang ada
+      daftar_tanggal = sorted(df["Tanggal_Saja"].unique(), reverse=True)
+      pilih_tanggal = st.selectbox(
+          "Pilih Tanggal:", options=daftar_tanggal
+      )
+
+      # Filter dataframe berdasarkan tanggal yang dipilih
+      df_harian = df[df["Tanggal_Saja"] == pilih_tanggal]
+      kalori_harian = int(df_harian[col_kalori_nama].sum())
+
+      # Tampilkan metrik khusus hari tersebut
+      st.metric(
+          label=f"🎯 Total Kalori pada Tanggal {pilih_tanggal}",
+          value=f"{kalori_harian} kcal",
+      )
+
+      st.write(f"Daftar makanan pada tanggal {pilih_tanggal}:")
+      st.dataframe(df_harian.drop(columns=["Tanggal_Saja"]), use_container_width=True)
+
+    st.markdown("---")
+    st.subheader("📜 Seluruh Riwayat Makanan")
+    st.dataframe(df.drop(columns=["Tanggal_Saja"], errors="ignore"), use_container_width=True)
+
 else:
   st.warning(
       "Belum ada data di Google Sheets ini, atau pastikan status sharing file"
