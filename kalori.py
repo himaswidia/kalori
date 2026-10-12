@@ -7,7 +7,7 @@ st.set_page_config(
 )
 
 st.title("🥗 Food & Calorie Tracker")
-st.write("Catat makanan harianmu dan pantau rekap kalori dengan lebih rapi!")
+st.write("Pantau rekap kalori harianmu dengan bersih dan ringkas!")
 
 # Tombol Google Form
 GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc1XenVBhorc_SSVog7dnJl-jV0R2vztFMuzutG3PmaoePAlg/viewform"
@@ -17,7 +17,7 @@ st.link_button("👉 Buka Google Form Catat Kalori", GOOGLE_FORM_URL)
 
 st.markdown("---")
 
-# --- MEMBACA RIWAYAT DARI GOOGLE SHEETS ---
+# --- MEMBACA DATA DARI GOOGLE SHEETS ---
 SHEET_ID = "1uvO_4PJnCkCOUJEl4DpPnabBW6AtjBEnho2ypiRH-GE"
 url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv"
 
@@ -33,7 +33,7 @@ def load_data():
 
 df = load_data()
 
-st.subheader("📊 Rekap & Riwayat Kalori")
+st.subheader("📊 Ringkasan & Rekap Kalori")
 
 if df is not None and not df.empty:
   # Membersihkan spasi pada nama kolom
@@ -51,13 +51,13 @@ if df is not None and not df.empty:
         df[col_kalori_nama], errors="coerce"
     ).fillna(0)
 
-    # Total Kalori Keseluruhan
+    # 1. Total Kalori Keseluruhan
     total_semua = int(df[col_kalori_nama].sum())
     st.metric(
         label="🔥 Total Kalori Keseluruhan", value=f"{total_semua} kcal"
     )
 
-    # Rekap Berdasarkan Tanggal (Per Hari)
+    # 2. Rekap Berdasarkan Tanggal (Per Hari)
     if kolom_tanggal:
       col_tgl_nama = kolom_tanggal[0]
       df["Tanggal_Saja"] = (
@@ -82,30 +82,21 @@ if df is not None and not df.empty:
 
       st.write(f"Daftar makanan pada tanggal {pilih_tanggal}:")
       
-      # Menampilkan tabel data harian tanpa kolom bantu
+      # Menampilkan tabel data harian yang ringkas
       st.dataframe(
           df_harian.drop(columns=["Tanggal_Saja"]),
           use_container_width=True,
           hide_index=True,
       )
 
-      # Menampilkan preview foto jika ada kolom Foto dan link valid
+      # Menampilkan tautan preview foto per item jika ada
       kolom_foto = [col for col in df_harian.columns if "foto" in col.lower() or "file" in col.lower()]
       if kolom_foto:
         col_foto_nama = kolom_foto[0]
         for index, row in df_harian.iterrows():
           link_foto = row[col_foto_nama]
           if pd.notna(link_foto) and str(link_foto).startswith("http"):
-            # Mengubah link Google Drive view menjadi direct/embed jika memungkinkan, atau tampilkan sebagai tautan rapi
-            st.markdown(f"📸 **Foto ({row.get('Nama Makanan', 'Makanan')}):** [Buka Gambar di Drive]({link_foto})")
-
-    st.markdown("---")
-    st.subheader("📜 Seluruh Riwayat Makanan")
-    st.dataframe(
-        df.drop(columns=["Tanggal_Saja"], errors="ignore"),
-        use_container_width=True,
-        hide_index=True,
-    )
+            st.markdown(f"📸 **Foto {row.get('Nama Makanan', 'Makanan')}:** [Buka Gambar di Google Drive]({link_foto})")
 
 else:
   st.warning(
