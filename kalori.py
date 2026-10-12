@@ -1,4 +1,3 @@
-from datetime import datetime
 import pandas as pd
 import streamlit as st
 
@@ -8,53 +7,30 @@ st.set_page_config(
 
 st.title("🥗 Food & Calorie Tracker")
 st.write(
-    "Catat makanan, upload foto, dan pantau kalori harianmu dengan mudah di"
-    " sini."
+    "Catat makanan harianmu melalui Google Form di bawah ini. Data dan foto"
+    " akan otomatis tersimpan ke Google Drive & Sheets!"
 )
 
-# Form Input Interaktif (Aman & Tanpa Error Secrets)
-with st.form("form_kalori", clear_on_submit=True):
-  st.subheader("➕ Tambah Catatan Makanan")
-  tanggal = st.date_input("Tanggal", value=datetime.now())
-  nama_makanan = st.text_input("Nama Makanan & Minuman")
-  jumlah_kalori = st.number_input(
-      "Jumlah Kalori (kcal)", min_value=0, step=10, value=100
-  )
+# --- 1. EMBED GOOGLE FORM (100% Aman & Resmi) ---
+# Masukkan link Google Form kamu di sini
+GOOGLE_FORM_URL = "MASUKKAN_LINK_GOOGLE_FORM_ANDA_DI_SINI"
 
-  # Fitur Upload Foto Makanan
-  uploaded_file = st.file_uploader(
-      "Upload Foto Makanan (JPG/PNG)", type=["jpg", "jpeg", "png"]
-  )
+st.markdown("### 📝 Form Input Makanan")
+st.components.v1.iframe(GOOGLE_FORM_URL, height=650, scrolling=True)
 
-  submit_button = st.form_submit_button(label="Simpan Catatan")
+st.markdown("---")
 
-  if submit_button:
-    if nama_makanan.strip() != "":
-      nama_foto = uploaded_file.name if uploaded_file is not None else "Tanpa Foto"
-      st.success(f"Berhasil dicatat: {nama_makanan} ({jumlah_kalori} kcal)!")
-
-      # Jika ada foto yang di-upload, tampilkan preview-nya langsung di layar
-      if uploaded_file is not None:
-        st.image(
-            uploaded_file,
-            caption=f"Foto: {nama_makanan}",
-            use_container_width=True,
-        )
-
-      st.info(
-          "💡 Tips: Data di atas siap disalin atau dicatat ke Google Sheets"
-          " utama kamu."
-      )
-    else:
-      st.warning("Nama makanan tidak boleh kosong!")
-
-# Membaca Data dari Google Sheets Publik (Menggunakan Sheet ID kamu)
-SHEET_ID = "1UW-qYpzKF8U0z1AmqGjlgqXf8O1Ppk7xwx5CHIpAeB4"
-SHEET_NAME = "kalori"
+# --- 2. MENAMPILKAN RIWAYAT & TOTAL KALORI DARI GOOGLE SHEETS ---
+SHEET_ID = (  # Pastikan ID ini sesuai dengan file Google Sheets "kalori" kamu
+    "1UW-qYpzKF8U0z1AmqGjlgqXf8O1Ppk7xwx5CHIpAeB4"
+)
+SHEET_NAME = (  # Nama sheet default dari Google Form biasanya 'Form Responses 1'
+    "Form Responses 1"
+)
 url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
 
 
-@st.cache_data(ttl=10)
+@st.cache_data(ttl=5)
 def load_data():
   try:
     df = pd.read_csv(url)
@@ -65,21 +41,24 @@ def load_data():
 
 df = load_data()
 
+st.subheader("📜 Riwayat Makanan & Total Kalori")
+
 if df is not None and not df.empty:
   df.columns = df.columns.str.strip()
-  if "Jumlah Kalori" in df.columns:
-    df["Jumlah Kalori"] = pd.to_numeric(
-        df["Jumlah Kalori"], errors="coerce"
-    ).fillna(0)
-    total_kalori = int(df["Jumlah Kalori"].sum())
+
+  # Otomatis mencari kolom yang berisi kata 'kalori'
+  kolom_kalori = [col for col in df.columns if "kalori" in col.lower()]
+  if kolom_kalori:
+    col_nama = kolom_kalori[0]
+    df[col_nama] = pd.to_numeric(df[col_nama], errors="coerce").fillna(0)
+    total_kalori = int(df[col_nama].sum())
     st.metric(
         label="🔥 Total Kalori Masuk Keseluruhan", value=f"{total_kalori} kcal"
     )
 
-  st.subheader("📜 Riwayat Makanan dari Google Sheets")
   st.dataframe(df, use_container_width=True)
 else:
   st.info(
-      "Belum ada data riwayat di Google Sheets, atau pastikan link Google"
-      " Sheets sudah diatur ke 'Siapa saja yang memiliki link dapat melihat'."
+      "Belum ada data masuk atau pastikan Google Sheets sudah diset ke 'Siapa"
+      " saja yang memiliki link dapat melihat'."
   )
