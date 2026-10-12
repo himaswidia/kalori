@@ -12,21 +12,19 @@ st.write(
 )
 
 # --- 1. EMBED GOOGLE FORM (100% Aman & Resmi) ---
-# Masukkan link Google Form kamu di sini
-GOOGLE_FORM_URL = "MASUKKAN_LINK_GOOGLE_FORM_ANDA_DI_SINI"
+GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc1XenVBhorc_SSVog7dnJl-jV0R2vztFMuzutG3PmaoePAlg/viewform?usp=embed_hide"
 
 st.markdown("### 📝 Form Input Makanan")
+# Menggunakan parameter embedded agar form tampil rapi di dalam halaman Streamlit
 st.components.v1.iframe(GOOGLE_FORM_URL, height=650, scrolling=True)
 
 st.markdown("---")
 
 # --- 2. MENAMPILKAN RIWAYAT & TOTAL KALORI DARI GOOGLE SHEETS ---
-SHEET_ID = (  # Pastikan ID ini sesuai dengan file Google Sheets "kalori" kamu
+SHEET_ID = (  # ID Google Sheets kamu
     "1UW-qYpzKF8U0z1AmqGjlgqXf8O1Ppk7xwx5CHIpAeB4"
 )
-SHEET_NAME = (  # Nama sheet default dari Google Form biasanya 'Form Responses 1'
-    "Form Responses 1"
-)
+SHEET_NAME = "Form_Responses_1"
 url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
 
 
