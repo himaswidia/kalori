@@ -7,7 +7,7 @@ st.set_page_config(
 )
 
 st.title("🥗 Food & Calorie Tracker")
-st.write("Pantau rekap kalori harianmu dengan bersih dan ringkas!")
+st.write("Catat dan pantau kalori harianmu dengan praktis!")
 
 # Tombol Google Form
 GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc1XenVBhorc_SSVog7dnJl-jV0R2vztFMuzutG3PmaoePAlg/viewform"
@@ -33,8 +33,6 @@ def load_data():
 
 df = load_data()
 
-st.subheader("📊 Ringkasan & Rekap Kalori")
-
 if df is not None and not df.empty:
   # Membersihkan spasi pada nama kolom
   df.columns = df.columns.str.strip()
@@ -45,58 +43,44 @@ if df is not None and not df.empty:
       col for col in df.columns if "tanggal" in col.lower() or "date" in col.lower()
   ]
 
-  if kolom_kalori:
+  if kolom_kalori and kolom_tanggal:
     col_kalori_nama = kolom_kalori[0]
+    col_tgl_nama = kolom_tanggal[0]
+
     df[col_kalori_nama] = pd.to_numeric(
         df[col_kalori_nama], errors="coerce"
     ).fillna(0)
+    df["Tanggal_Saja"] = df[col_tgl_nama].astype(str).str.split(" ").str[0]
 
-    # 1. Total Kalori Keseluruhan
-    total_semua = int(df[col_kalori_nama].sum())
+    st.subheader("📅 Rekap Kalori Harian")
+
+    daftar_tanggal = sorted(df["Tanggal_Saja"].unique(), reverse=True)
+    pilih_tanggal = st.selectbox("Pilih Tanggal:", options=daftar_tanggal)
+
+    df_harian = df[df["Tanggal_Saja"] == pilih_tanggal]
+    kalori_harian = int(df_harian[col_kalori_nama].sum())
+
     st.metric(
-        label="🔥 Total Kalori Keseluruhan", value=f"{total_semua} kcal"
+        label=f"🎯 Total Kalori pada Tanggal {pilih_tanggal}",
+        value=f"{kalori_harian} kcal",
     )
 
-    # 2. Rekap Berdasarkan Tanggal (Per Hari)
-    if kolom_tanggal:
-      col_tgl_nama = kolom_tanggal[0]
-      df["Tanggal_Saja"] = (
-          df[col_tgl_nama].astype(str).str.split(" ").str[0]
-      )
+    st.write(f"Daftar makanan pada tanggal {pilih_tanggal}:")
+    
+    st.dataframe(
+        df_harian.drop(columns=["Tanggal_Saja"]),
+        use_container_width=True,
+        hide_index=True,
+    )
 
-      st.markdown("---")
-      st.subheader("📅 Pilih Tanggal untuk Lihat Rekap Harian")
-
-      daftar_tanggal = sorted(df["Tanggal_Saja"].unique(), reverse=True)
-      pilih_tanggal = st.selectbox(
-          "Pilih Tanggal:", options=daftar_tanggal
-      )
-
-      df_harian = df[df["Tanggal_Saja"] == pilih_tanggal]
-      kalori_harian = int(df_harian[col_kalori_nama].sum())
-
-      st.metric(
-          label=f"🎯 Total Kalori pada Tanggal {pilih_tanggal}",
-          value=f"{kalori_harian} kcal",
-      )
-
-      st.write(f"Daftar makanan pada tanggal {pilih_tanggal}:")
-      
-      # Menampilkan tabel data harian yang ringkas
-      st.dataframe(
-          df_harian.drop(columns=["Tanggal_Saja"]),
-          use_container_width=True,
-          hide_index=True,
-      )
-
-      # Menampilkan tautan preview foto per item jika ada
-      kolom_foto = [col for col in df_harian.columns if "foto" in col.lower() or "file" in col.lower()]
-      if kolom_foto:
-        col_foto_nama = kolom_foto[0]
-        for index, row in df_harian.iterrows():
-          link_foto = row[col_foto_nama]
-          if pd.notna(link_foto) and str(link_foto).startswith("http"):
-            st.markdown(f"📸 **Foto {row.get('Nama Makanan', 'Makanan')}:** [Buka Gambar di Google Drive]({link_foto})")
+    # Menampilkan tautan preview foto per item jika ada
+    kolom_foto = [col for col in df_harian.columns if "foto" in col.lower() or "file" in col.lower()]
+    if kolom_foto:
+      col_foto_nama = kolom_foto[0]
+      for index, row in df_harian.iterrows():
+        link_foto = row[col_foto_nama]
+        if pd.notna(link_foto) and str(link_foto).startswith("http"):
+          st.markdown(f"📸 **Foto {row.get('Nama Makanan', 'Makanan')}:** [Buka Gambar di Google Drive]({link_foto})")
 
 else:
   st.warning(
