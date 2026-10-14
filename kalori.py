@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 import pandas as pd
 import streamlit as st
 
@@ -56,18 +56,29 @@ if not df_olahraga.empty:
   if kolom_tgl_olahraga:
     df_olahraga["Tanggal_Saja"] = df_olahraga[kolom_tgl_olahraga].astype(str).str.split(" ").str[0]
 
-# Mendapatkan daftar seluruh tanggal unik dari kedua sheet
+# Mendapatkan daftar tanggal untuk kalender
 semua_tanggal = set()
 if not df_makan.empty and "Tanggal_Saja" in df_makan.columns:
   semua_tanggal.update(df_makan["Tanggal_Saja"].dropna().unique())
 if not df_olahraga.empty and "Tanggal_Saja" in df_olahraga.columns:
   semua_tanggal.update(df_olahraga["Tanggal_Saja"].dropna().unique())
 
-if semua_tanggal:
-  daftar_tanggal = sorted(list(semua_tanggal), reverse=True)
+st.subheader("📅 Pilih Tanggal Laporan")
 
-  st.subheader("📅 Laporan Harian Terpadu")
-  pilih_tanggal = st.selectbox("Pilih Tanggal Laporan:", options=daftar_tanggal)
+if semua_tanggal:
+  # Mengonversi string tanggal ke objek date untuk widget kalender Streamlit
+  daftar_date_obj = sorted([datetime.strptime(t.strip(), "%Y-%m-%d").date() for t in semua_tanggal if t.strip()], reverse=True)
+  
+  # Widget Kalender (Date Input)
+  pilih_tanggal_obj = st.date_input(
+      "Pilih tanggal pada kalender:",
+      value=daftar_date_obj[0] if daftar_date_obj else date.today(),
+      min_value=min(daftar_date_obj) if daftar_date_obj else None,
+      max_value=max(daftar_date_obj) if daftar_date_obj else date.today()
+  )
+  
+  # Mengubah kembali pilihan kalender ke format string 'YYYY-MM-DD' agar cocok dengan data sheet
+  pilih_tanggal = pilih_tanggal_obj.strftime("%Y-%m-%d")
 
   st.markdown(f"### 📋 Ringkasan Tanggal: {pilih_tanggal}")
 
