@@ -79,5 +79,15 @@ if df is not None and not df.empty:
     st.markdown("---")
     st.write("**Catatan Makanan & Aktivitas pada Hari Ini:**")
 
-    # Menampilkan setiap baris catatan dalam bentuk kartu/box yang rapi
-    for index
+    # Menampilkan tabel data harian secara rapi dan bersih
+    st.dataframe(
+        df_harian.drop(columns=["Tanggal_Saja"]),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+else:
+  st.warning(
+      "Belum ada data masuk di Google Sheets, atau pastikan status sharing"
+      " file sudah diatur ke 'Siapa saja yang memiliki link dapat melihat'."
+  )
