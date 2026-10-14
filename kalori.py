@@ -3,10 +3,10 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="Daily Habit & Health Tracker", page_icon="🎯", layout="centered"
+    page_title="Health Tracker", page_icon="🎯", layout="centered"
 )
 
-st.title("🎯 Daily Habit & Health Tracker")
+st.title("🎯 Health Tracker")
 st.write("Laporan harian kebiasaan, makanan, dan aktivitas fisikmu!")
 
 # Tombol Google Form untuk Makan dan Olahraga
