@@ -3,20 +3,24 @@ import pandas as pd
 import streamlit as st
 
 st.set_page_config(
-    page_title="Health Tracker", page_icon="🎯", layout="centered"
+    page_title="Daily Habit & Health Tracker", page_icon="🎯", layout="centered"
 )
 
-st.title("🎯 Health Tracker")
+st.title("🎯 Daily Habit & Health Tracker")
 st.write("Laporan harian kebiasaan, makanan, dan aktivitas fisikmu!")
 
-# Tombol Google Form untuk Makan dan Olahraga
-col_f1, col_f2 = st.columns(2)
+# Tombol Google Form & Google Sheets
+col_f1, col_f2, col_f3 = st.columns(3)
 with col_f1:
   FORM_MAKAN_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc1XenVBhorc_SSVog7dnJl-jV0R2vztFMuzutG3PmaoePAlg/viewform"
   st.link_button("📝 Input Jurnal Makan", FORM_MAKAN_URL, use_container_width=True)
 with col_f2:
   FORM_OLAHRAGA_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeE-AB9MLf1-Kf3puAKa0kUra7X4oAE6VY8SYvW4v6nO1bEcQ/viewform"
-  st.link_button("🏋️ Input Olahraga & Jam", FORM_OLAHRAGA_URL, use_container_width=True)
+  st.link_button("🏋️ Input Olahraga", FORM_OLAHRAGA_URL, use_container_width=True)
+with col_f3:
+  # Link Google Sheets utama gabungan atau kamu bisa arahkan ke salah satu spreadsheet
+  SHEET_EDIT_URL = "https://docs.google.com/spreadsheets/d/1uvO_4PJnCkCOUJEl4DpPnabBW6AtjBEnho2ypiRH-GE/edit?usp=sharing"
+  st.link_button("✏️ Edit Data Spreadsheet", SHEET_EDIT_URL, use_container_width=True)
 
 st.markdown("---")
 
@@ -49,7 +53,6 @@ for df in [df_makan, df_olahraga]:
     df.columns = df.columns.str.strip()
     kolom_tgl = next((col for col in df.columns if "tanggal" in col.lower() or "date" in col.lower()), None)
     if kolom_tgl:
-      # Mengonversi berbagai format tanggal secara aman menjadi 'YYYY-MM-DD'
       df["Tanggal_Saja"] = pd.to_datetime(df[kolom_tgl], errors="coerce").dt.strftime("%Y-%m-%d")
 
 # Mendapatkan daftar tanggal unik untuk kalender
@@ -62,7 +65,6 @@ if not df_olahraga.empty and "Tanggal_Saja" in df_olahraga.columns:
 st.subheader("📅 Pilih Tanggal Laporan")
 
 if semua_tanggal:
-  # Menyaring tanggal yang valid (bukan NaT/None)
   daftar_date_obj = sorted([datetime.strptime(t.strip(), "%Y-%m-%d").date() for t in semua_tanggal if isinstance(t, str) and len(t) == 10], reverse=True)
   
   if daftar_date_obj:
