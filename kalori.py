@@ -9,85 +9,116 @@ st.set_page_config(
 st.title("🎯 Daily Habit & Health Tracker")
 st.write("Laporan harian kebiasaan, makanan, dan aktivitas fisikmu!")
 
-# Tombol Google Form
-GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc1XenVBhorc_SSVog7dnJl-jV0R2vztFMuzutG3PmaoePAlg/viewform"
-
-st.markdown("### 📝 Input Jurnal & Aktivitas Baru")
-st.link_button("👉 Buka Google Form Pencatatan", GOOGLE_FORM_URL)
+# Tombol Google Form untuk Makan dan Olahraga
+col_f1, col_f2 = st.columns(2)
+with col_f1:
+  FORM_MAKAN_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc1XenVBhorc_SSVog7dnJl-jV0R2vztFMuzutG3PmaoePAlg/viewform"
+  st.link_button("📝 Input Jurnal Makan", FORM_MAKAN_URL, use_container_width=True)
+with col_f2:
+  FORM_OLAHRAGA_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeE-AB9MLf1-Kf3puAKa0kUra7X4oAE6VY8SYvW4v6nO1bEcQ/viewform"
+  st.link_button("🏋️ Input Olahraga & Jam", FORM_OLAHRAGA_URL, use_container_width=True)
 
 st.markdown("---")
 
-# --- MEMBACA DATA DARI GOOGLE SHEETS ---
-SHEET_ID = "1uvO_4PJnCkCOUJEl4DpPnabBW6AtjBEnho2ypiRH-GE"
-url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv"
+# --- MEMBACA DATA DARI KEDUA GOOGLE SHEETS ---
+SHEET_MAKAN_ID = "1uvO_4PJnCkCOUJEl4DpPnabBW6AtjBEnho2ypiRH-GE"
+SHEET_OLAHRAGA_ID = "1ZKj2uBAd5IyXHxGPEgHhMKq51uerSnQAuSLKqgepaf0"
 
+url_makan = f"https://docs.google.com/spreadsheets/d/{SHEET_MAKAN_ID}/gviz/tq?tqx=out:csv"
+url_olahraga = f"https://docs.google.com/spreadsheets/d/{SHEET_OLAHRAGA_ID}/gviz/tq?tqx=out:csv"
 
 @st.cache_data(ttl=2)
-def load_data():
+def load_all_data():
   try:
-    df = pd.read_csv(url)
-    return df
-  except Exception as e:
-    return None
+    df_makan = pd.read_csv(url_makan)
+  except Exception:
+    df_makan = pd.DataFrame()
 
+  try:
+    df_olahraga = pd.read_csv(url_olahraga)
+  except Exception:
+    df_olahraga = pd.DataFrame()
 
-df = load_data()
+  return df_makan, df_olahraga
 
-if df is not None and not df.empty:
-  # Membersihkan spasi pada nama kolom
-  df.columns = df.columns.str.strip()
+df_makan, df_olahraga = load_all_data()
 
-  # Mencari kolom tanggal secara otomatis
-  kolom_tanggal = [
-      col for col in df.columns if "tanggal" in col.lower() or "date" in col.lower()
-  ]
+# Membersihkan spasi kolom jika data tidak kosong
+if not df_makan.empty:
+  df_makan.columns = df_makan.columns.str.strip()
+  kolom_tgl_makan = next((col for col in df_makan.columns if "tanggal" in col.lower() or "date" in col.lower()), None)
+  if kolom_tgl_makan:
+    df_makan["Tanggal_Saja"] = df_makan[kolom_tgl_makan].astype(str).str.split(" ").str[0]
 
-  if kolom_tanggal:
-    col_tgl_nama = kolom_tanggal[0]
-    df["Tanggal_Saja"] = df[col_tgl_nama].astype(str).str.split(" ").str[0]
+if not df_olahraga.empty:
+  df_olahraga.columns = df_olahraga.columns.str.strip()
+  kolom_tgl_olahraga = next((col for col in df_olahraga.columns if "tanggal" in col.lower() or "date" in col.lower()), None)
+  if kolom_tgl_olahraga:
+    df_olahraga["Tanggal_Saja"] = df_olahraga[kolom_tgl_olahraga].astype(str).str.split(" ").str[0]
 
-    st.subheader("📅 Laporan Harian")
+# Mendapatkan daftar seluruh tanggal unik dari kedua sheet
+semua_tanggal = set()
+if not df_makan.empty and "Tanggal_Saja" in df_makan.columns:
+  semua_tanggal.update(df_makan["Tanggal_Saja"].dropna().unique())
+if not df_olahraga.empty and "Tanggal_Saja" in df_olahraga.columns:
+  semua_tanggal.update(df_olahraga["Tanggal_Saja"].dropna().unique())
 
-    daftar_tanggal = sorted(df["Tanggal_Saja"].unique(), reverse=True)
-    pilih_tanggal = st.selectbox("Pilih Tanggal Laporan:", options=daftar_tanggal)
+if semua_tanggal:
+  daftar_tanggal = sorted(list(semua_tanggal), reverse=True)
 
-    # Filter data berdasarkan tanggal yang dipilih
-    df_harian = df[df["Tanggal_Saja"] == pilih_tanggal]
+  st.subheader("📅 Laporan Harian Terpadu")
+  pilih_tanggal = st.selectbox("Pilih Tanggal Laporan:", options=daftar_tanggal)
 
-    st.markdown(f"### 📋 Ringkasan Tanggal: {pilih_tanggal}")
+  st.markdown(f"### 📋 Ringkasan Tanggal: {pilih_tanggal}")
 
-    # Menampilkan metrik ringkasan dari jam tangan
-    kolom_langkah = [col for col in df.columns if "langkah" in col.lower() or "step" in col.lower()]
-    kolom_kalori_jam = [col for col in df.columns if "kalori" in col.lower() or "kcal" in col.lower()]
-
-    col1, col2 = st.columns(2)
+  # --- BAGIAN 1: DATA OLAHRAGA & JAM TANGAN ---
+  if not df_olahraga.empty and "Tanggal_Saja" in df_olahraga.columns:
+    df_olahraga_harian = df_olahraga[df_olahraga["Tanggal_Saja"] == pilih_tanggal]
     
-    if kolom_langkah:
-      col_langkah_nama = kolom_langkah[0]
-      df_harian[col_langkah_nama] = pd.to_numeric(df_harian[col_langkah_nama], errors="coerce").fillna(0)
-      total_langkah = int(df_harian[col_langkah_nama].max())
-      with col1:
-        st.metric(label="👟 Total Langkah", value=f"{total_langkah:,} steps")
+    if not df_olahraga_harian.empty:
+      st.markdown("#### 🏃‍♂️ Aktivitas Fisik & Smartwatch")
+      
+      col_langkah = next((col for col in df_olahraga_harian.columns if "langkah" in col.lower() or "step" in col.lower()), None)
+      col_kalori = next((col for col in df_olahraga_harian.columns if "kalori" in col.lower() or "kcal" in col.lower()), None)
+      col_status = next((col for col in df_olahraga_harian.columns if "olahraga" in col.lower() or "status" in col.lower()), None)
 
-    if kolom_kalori_jam:
-      col_kal_nama = kolom_kalori_jam[0]
-      df_harian[col_kal_nama] = pd.to_numeric(df_harian[col_kal_nama], errors="coerce").fillna(0)
-      total_kal_jam = int(df_harian[col_kal_nama].max())
-      with col2:
-        st.metric(label="🔥 Kalori Jam Tangan", value=f"{total_kal_jam} kcal")
+      c1, c2 = st.columns(2)
+      if col_langkah:
+        df_olahraga_harian[col_langkah] = pd.to_numeric(df_olahraga_harian[col_langkah], errors="coerce").fillna(0)
+        total_langkah = int(df_olahraga_harian[col_langkah].max())
+        with c1:
+          st.metric(label="👟 Total Langkah", value=f"{total_langkah:,} steps")
 
-    st.markdown("---")
-    st.write("**Catatan Makanan & Aktivitas pada Hari Ini:**")
+      if col_kalori:
+        df_olahraga_harian[col_kalori] = pd.to_numeric(df_olahraga_harian[col_kalori], errors="coerce").fillna(0)
+        total_kal = int(df_olahraga_harian[col_kalori].max())
+        with c2:
+          st.metric(label="🔥 Kalori Smartwatch", value=f"{total_kal} kcal")
 
-    # Menampilkan tabel data harian secara rapi dan bersih
-    st.dataframe(
-        df_harian.drop(columns=["Tanggal_Saja"]),
-        use_container_width=True,
-        hide_index=True,
-    )
+      if col_status:
+        status_terakhir = df_olahraga_harian[col_status].dropna().iloc[-1] if not df_olahraga_harian[col_status].dropna().empty else "-"
+        st.info(f"🏋️‍♂️ **Status Olahraga Hari Ini:** {status_terakhir}")
+    else:
+      st.caption("ℹ️ Belum ada data olahraga/jam tangan yang dicatat pada tanggal ini (hari istirahat).")
+
+  st.markdown("---")
+
+  # --- BAGIAN 2: JURNAL MAKAN HARIAN ---
+  if not df_makan.empty and "Tanggal_Saja" in df_makan.columns:
+    df_makan_harian = df_makan[df_makan["Tanggal_Saja"] == pilih_tanggal]
+    
+    if not df_makan_harian.empty:
+      st.markdown("#### 🍽️ Catatan Jurnal Makanan")
+      st.dataframe(
+          df_makan_harian.drop(columns=["Tanggal_Saja"], errors="ignore"),
+          use_container_width=True,
+          hide_index=True,
+      )
+    else:
+      st.caption("ℹ️ Belum ada catatan makan yang dimasukkan pada tanggal ini.")
 
 else:
   st.warning(
-      "Belum ada data masuk di Google Sheets, atau pastikan status sharing"
+      "Belum ada data masuk di Google Sheets (makan maupun olahraga), atau pastikan status sharing"
       " file sudah diatur ke 'Siapa saja yang memiliki link dapat melihat'."
   )
